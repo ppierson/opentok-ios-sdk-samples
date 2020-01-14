@@ -7,6 +7,7 @@
 
 #import "ViewController.h"
 #import <OpenTok/OpenTok.h>
+#import <AVFoundation/AVFoundation.h>
 
 // *** Fill the following variables using your own Project info  ***
 // ***          https://dashboard.tokbox.com/projects            ***
@@ -26,6 +27,7 @@ static NSString* const kToken = @"";
 @implementation ViewController
 static double widgetHeight = 240;
 static double widgetWidth = 320;
+static AVAudioPlayer *player;
 
 #pragma mark - View lifecycle
 
@@ -38,6 +40,7 @@ static double widgetWidth = 320;
     _session = [[OTSession alloc] initWithApiKey:kApiKey
                                        sessionId:kSessionId
                                         delegate:self];
+    [self playAudio];
     [self doConnect];
 }
 
@@ -49,6 +52,15 @@ static double widgetWidth = 320;
 - (BOOL)shouldAutorotate {
     return UIUserInterfaceIdiomPhone != [[UIDevice currentDevice] userInterfaceIdiom];
 }
+
+- (void)playAudio {
+    [[AVAudioSession sharedInstance] setCategory: AVAudioSessionCategoryPlayAndRecord error:nil];
+    [[AVAudioSession sharedInstance] setActive:true error:nil];
+    NSURL *url = [[NSBundle mainBundle] URLForResource:@"sample" withExtension:@"m4a"];
+    player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:nil];
+    [player play];
+}
+
 #pragma mark - OpenTok methods
 
 /** 
@@ -75,17 +87,21 @@ static double widgetWidth = 320;
 {
     OTPublisherSettings *settings = [[OTPublisherSettings alloc] init];
     settings.name = [UIDevice currentDevice].name;
+    settings.audioTrack = true;
+    settings.videoTrack = false;
     _publisher = [[OTPublisher alloc] initWithDelegate:self settings:settings];
-   
+
+   NSLog(@"Will start publisher");
     OTError *error = nil;
     [_session publish:_publisher error:&error];
     if (error)
     {
+        NSLog(@"Error publishing!");
         [self showAlert:[error localizedDescription]];
     }
     
-    [self.view addSubview:_publisher.view];
-    [_publisher.view setFrame:CGRectMake(0, 0, widgetWidth, widgetHeight)];
+//    [self.view addSubview:_publisher.view];
+//    [_publisher.view setFrame:CGRectMake(0, 0, widgetWidth, widgetHeight)];
 }
 
 /**
